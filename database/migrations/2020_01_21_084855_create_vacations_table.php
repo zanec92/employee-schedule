@@ -15,6 +15,12 @@ class CreateVacationsTable extends Migration
     {
         Schema::create('vacations', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->date('vacation_from');
+            $table->date('vacation_to');
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')
+                ->references('id')->on('users')
+                ->onDelete('cascade');
             $table->timestamps();
         });
     }
