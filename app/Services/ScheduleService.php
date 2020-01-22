@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\GoogleCalendar\GoogleCalendar;
 use App\Repositories\ARScheduleRepository;
 use Carbon\CarbonPeriod;
 
@@ -8,9 +9,10 @@ class ScheduleService
 {
     protected $schedule;
 
-    public function __construct(ARScheduleRepository $schedule)
+    public function __construct(ARScheduleRepository $schedule, GoogleCalendar $googleCalendar)
     {
         $this->schedule = $schedule;
+        $this->googleCalendar = $googleCalendar;
     }
 
     /**
@@ -43,15 +45,23 @@ class ScheduleService
     {
         $data = [];
 
-        $period = CarbonPeriod::create($startDate, $endDate);
-        foreach ($period as $key => $date) {
-            if ($date->isWeekday()) { //отбираем только рабочие дни
-                $data['schedule'][$key]['day'] = $date->format('Y-m-d');
-                $data['schedule'][$key]['timeRanges'] = $timeRanges;
-            }
+        $businessDaysPeriod = $this->getBusinessDaysPeriod($startDate, $endDate);
+
+        foreach ($businessDaysPeriod as $n => $date) {
+            $data['schedule'][$n]['day'] = $date->format('Y-m-d');
+            $data['schedule'][$n]['timeRanges'] = $timeRanges;
         }
 
         return $data;
     }
-    
+
+    private function getBusinessDaysPeriod($startDate, $endDate)
+    {
+        $holidays = $this->googleCalendar->getHolidays();
+
+        return CarbonPeriod::create($startDate, $endDate)
+            ->filter(function ($date) use ($holidays) {
+                return $date->isWeekday() && !in_array($date, $holidays);
+            });
+    }
 }
