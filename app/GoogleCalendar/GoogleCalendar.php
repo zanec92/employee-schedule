@@ -7,17 +7,40 @@ use GuzzleHttp\Client;
 
 class GoogleCalendar
 {
-
+    /**
+     * Ключ к Google Calendar API
+     * 
+     * @var string
+     * 
+     */
     protected $API_KEY;
 
+    /**
+     * Http-клиент Guzzle
+     * 
+     * @var GuzzleHttp\Client
+     * 
+     */
     protected $httpClient;
 
+    /**
+     * Конструктор класса ARScheduleRepository
+     * 
+     * @return void
+     * 
+     */
     public function __construct()
     {
         $this->API_KEY = env('GOOGLE_CALENDAR_API_KEY');
         $this->httpClient = new Client();
     }
 
+    /**
+     * Получение списка праздников из Google Calendar
+     * 
+     * @return array
+     * 
+     */
     public function getHolidays()
     {
         $response = $this->httpClient->get(
