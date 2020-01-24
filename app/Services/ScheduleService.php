@@ -1,39 +1,56 @@
 <?php
 namespace App\Services;
 
-use App\GoogleCalendar\GoogleCalendar;
-use App\Repositories\ARScheduleRepository;
+use App\Repositories\AREmployeeTimeRepository;
+use App\Repositories\ARVacationRepository;
+use App\Repositories\GoogleCalendarEventsRepository;
+use App\Repositories\GoogleCalendarHolidaysRepository;
 use Carbon\CarbonPeriod;
 
 class ScheduleService
 {
     /**
      * Репозиторий расписания рабочего времени сотрудника
-     * 
-     * @var App\Repositories\ARScheduleRepository
+     *
+     * @var App\Repositories\AREmployeeTimeRepository
      */
-    protected $schedule;
+    protected $employeeTime;
+
+    protected $holiday;
+
+    protected $vacation;
+
+    protected $googleCalendarEvents;
+
+    protected $data = [];
 
     /**
      * Конструктор класса ScheduleService
-     * 
-     * @param App\Repositories\ARScheduleRepository $schedule
+     *
+     * @param App\Repositories\AREmployeeTimeRepository $employeeTime
      * @param App\GoogleCalendar\GoogleCalendar $googleCalendar
-     * 
+     *
      */
-    public function __construct(ARScheduleRepository $schedule, GoogleCalendar $googleCalendar)
+    public function __construct(
+        ARVacationRepository $vacation,
+        AREmployeeTimeRepository $employeeTime,
+        GoogleCalendarHolidaysRepository $holiday,
+        GoogleCalendarEventsRepository $googleCalendarEvents
+    )
     {
-        $this->schedule = $schedule;
-        $this->googleCalendar = $googleCalendar;
+        $this->vacation = $vacation;
+        $this->employeeTime = $employeeTime;
+        $this->holiday = $holiday;
+        $this->googleCalendarEvents = $googleCalendarEvents;
     }
 
     /**
      * Получить рабочее расписание сотрудника за определенный срок
-     * 
+     *
      * @param int $id
      * @param string $startDate
      * @param string $endDate
-     * 
+     *
      * @return array
      */
     public function getEmployeeTimetable($id, $startDate, $endDate)
@@ -43,49 +60,47 @@ class ScheduleService
 
     /**
      * Генерация рабочего расписания сотрудника за определенный срок
-     * 
+     *
      * @param string $startDate
      * @param string $endDate
      * @param array $timeRanges
-     * 
+     *
      * @return array
-     * 
+     *
      */
     private function generateTimetable($id, $startDate, $endDate)
     {
-        $data = [];
-
-        $timeRanges = $this->schedule->findEmployeeTime($id);
+        $timeRanges = $this->employeeTime->find($id);
 
         $businessDaysPeriod = $this->getBusinessDaysPeriod($startDate, $endDate, $id);
 
         foreach ($businessDaysPeriod as $n => $date) {
-            $data['schedule'][$n]['day'] = $date->format('Y-m-d');
-            $data['schedule'][$n]['timeRanges'] = $timeRanges;
+            $this->data['schedule'][$n]['day'] = $date->format('Y-m-d');
+            $this->data['schedule'][$n]['timeRanges'] = $timeRanges;
         }
 
-        return $data;
+        return $this->data;
     }
 
     /**
      * Получение рабочих дней сотрудника
-     * 
+     *
      * @param string $startDate
      * @param string $endDate
      * @param int $id
-     * 
+     *
      * @return \Carbon\CarbonPeriod
-     * 
+     *
      */
     private function getBusinessDaysPeriod($startDate, $endDate, $id)
     {
-        $holidays = $this->googleCalendar->getHolidays();
+        $holidays = $this->holiday->all();
 
-        $vacations = $this->schedule->findEmployeeVacationDays($id);
+        $vacations = $this->vacation->find($id);
 
         return CarbonPeriod::create($startDate, $endDate)
             ->filter(function ($date) use ($holidays, $vacations) {
-                return $date->isWeekday() 
+                return $date->isWeekday()
                     && !$this->isHoliday($holidays, $date)
                     && !$this->isVacationDay($vacations, $date);
             });
@@ -93,12 +108,12 @@ class ScheduleService
 
     /**
      * Проверка является ли день отпускным
-     * 
+     *
      * @param array $vacations
      * @param Carbon\Carbon $date
-     * 
+     *
      * @return bool
-     * 
+     *
      */
     private function isVacationDay($vacations, $date)
     {
@@ -110,12 +125,12 @@ class ScheduleService
 
     /**
      * Проверка является ли день праздником
-     * 
-     * @param 
+     *
+     * @param
      * @param Carbon\Carbon $date
-     * 
+     *
      * @return bool
-     * 
+     *
      */
     private function isHoliday($holidays, $date)
     {

@@ -1,14 +1,14 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Vacation extends Model
 {
     /**
-     * The attributes that are mass assignable.
-     * 
+     * Атрибуты, которые должны быть доступны при массовом заполнении
+     *
      * @var array
      */
     protected $fillable = [
@@ -17,8 +17,8 @@ class Vacation extends Model
     ];
 
     /**
-     * The attributes that should be hidden for arrays.
-     * 
+     * Атрибуты, которые должны быть скрыты в преобразованном массиве
+     *
      * @var array
      */
     protected $hidden = [
@@ -27,7 +27,7 @@ class Vacation extends Model
     ];
 
     /**
-     * The attributes that should be mutated to dates.
+     * Атрибуты, которые должны быть видоизменены по датам
      *
      * @var array
      */

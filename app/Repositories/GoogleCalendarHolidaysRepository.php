@@ -1,17 +1,16 @@
 <?php
 
-namespace App\GoogleCalendar;
+namespace App\Repositories;
 
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 
-class GoogleCalendar
+class GoogleCalendarHolidaysRepository
 {
     /**
      * Ключ к Google Calendar API
      *
      * @var string
-     *
      */
     protected $API_KEY;
 
@@ -19,15 +18,22 @@ class GoogleCalendar
      * Http-клиент Guzzle
      *
      * @var GuzzleHttp\Client
-     *
      */
     protected $httpClient;
 
     /**
-     * Конструктор класса ARScheduleRepository
+     * Список праздников
+     *
+     * @var array
+     */
+    protected $holidays = [];
+
+    /**
+     * Конструктор класса GoogleCalendarHolidaysRepository
+     *
+     * @param GuzzleHttp\Client $httpClient
      *
      * @return void
-     *
      */
     public function __construct(Client $httpClient)
     {
@@ -39,9 +45,8 @@ class GoogleCalendar
      * Получение списка праздников из Google Calendar
      *
      * @return array
-     *
      */
-    public function getHolidays()
+    public function all(): array
     {
         $response = $this->httpClient->get(
                 'https://www.googleapis.com/calendar/v3/calendars/ru.russian%23holiday%40group.v.calendar.google.com/events?key=' . $this->API_KEY
@@ -49,11 +54,11 @@ class GoogleCalendar
             ->getBody()
             ->getContents();
 
-        $holidays = json_decode($response)->items;
-        foreach ($holidays as $day) {
-            $holidaysDate[] = Carbon::create($day->start->date);
+        $holidaysList = json_decode($response)->items;
+        foreach ($holidaysList as $day) {
+            $this->holidays[] = Carbon::create($day->start->date);
         }
 
-        return $holidaysDate;
+        return $this->holidays;
     }
 }

@@ -18,7 +18,7 @@ class ScheduleController extends Controller
      * Вывод рабочего времени сотрудника компании в формате JSON
      *
      * @param  \Illuminate\Http\Request  $request
-     * 
+     *
      * @return \Illuminate\Http\Response
      */
     public function show(Request $request)
