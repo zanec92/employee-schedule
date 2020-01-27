@@ -33,14 +33,14 @@ class ScheduleService
 
     /**
      * Репозиторий событий: отгулы, корпоративы и прочее
-     * 
+     *
      * @var App\Repositories\GoogleCalendarEventsRepository
      */
     protected $events;
 
     /**
      * Массив выходных данных с рабочим расписание
-     * 
+     *
      * @var array
      */
     protected $data = [];
@@ -102,12 +102,12 @@ class ScheduleService
             $this->data['schedule'][$n]['day'] = $date->format('Y-m-d');
             $this->data['schedule'][$n]['timeRanges'] = $timeRanges;
         }*/
-        $count = 0;
+
         foreach ($businessDaysPeriod as $date) {
             foreach ($timeRanges as $time) {
-                $this->data[$count]['start'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['start']);
-                $this->data[$count]['end'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['end']);
-                $count++;
+                $range['start'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['start']);
+                $range['end'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['end']);
+                array_push($this->data, $range);
             }
         }
 
@@ -117,7 +117,7 @@ class ScheduleService
                 if ($period->overlaps($event['start_date'], $event['end_date'])) {
                     dump($interval['start']);
                     dump($interval['end']);
-                }  
+                }
             }
         }
 
