@@ -31,7 +31,7 @@ class GoogleCalendarEventsRepository
         $this->event = $event;
     }
 
-    public function getEvents($start_date, $end_date)
+    public function between($start_date, $end_date)
     {
         $events = $this->event->get(Carbon::create($start_date), Carbon::create($end_date));
         foreach ($events as $n => $event) {
