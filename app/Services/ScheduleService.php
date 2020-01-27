@@ -16,32 +16,54 @@ class ScheduleService
      */
     protected $employeeTime;
 
+    /**
+     * Репозиторий праздников
+     *
+     * @var App\Repositories\GoogleCalendarHolidaysRepository
+     */
     protected $holiday;
 
+    /**
+     * Репозиторий отпусков
+     *
+     * @var App\Repositories\ARVacationRepository
+     */
     protected $vacation;
 
-    protected $googleCalendarEvents;
+    /**
+     * Репозиторий событий: отгулы, корпоративы и прочее
+     * 
+     * @var App\Repositories\GoogleCalendarEventsRepository
+     */
+    protected $events;
 
+    /**
+     * Массив выходных данных с рабочим расписание
+     * 
+     * @var array
+     */
     protected $data = [];
 
     /**
      * Конструктор класса ScheduleService
      *
+     * @param App\Repositories\ARVacationRepository $vacation
      * @param App\Repositories\AREmployeeTimeRepository $employeeTime
-     * @param App\GoogleCalendar\GoogleCalendar $googleCalendar
+     * @param App\Repositories\GoogleCalendarHolidaysRepository $holiday
+     * @param App\Repositories\GoogleCalendarEventsRepository $events
      *
      */
     public function __construct(
         ARVacationRepository $vacation,
         AREmployeeTimeRepository $employeeTime,
         GoogleCalendarHolidaysRepository $holiday,
-        GoogleCalendarEventsRepository $googleCalendarEvents
+        GoogleCalendarEventsRepository $events
     )
     {
         $this->vacation = $vacation;
         $this->employeeTime = $employeeTime;
         $this->holiday = $holiday;
-        $this->googleCalendarEvents = $googleCalendarEvents;
+        $this->events = $events;
     }
 
     /**
@@ -66,7 +88,6 @@ class ScheduleService
      * @param array $timeRanges
      *
      * @return array
-     *
      */
     private function generateTimetable($id, $startDate, $endDate)
     {
@@ -90,7 +111,6 @@ class ScheduleService
      * @param int $id
      *
      * @return \Carbon\CarbonPeriod
-     *
      */
     private function getBusinessDaysPeriod($startDate, $endDate, $id)
     {
@@ -113,7 +133,6 @@ class ScheduleService
      * @param Carbon\Carbon $date
      *
      * @return bool
-     *
      */
     private function isVacationDay($vacations, $date)
     {
@@ -130,7 +149,6 @@ class ScheduleService
      * @param Carbon\Carbon $date
      *
      * @return bool
-     *
      */
     private function isHoliday($holidays, $date)
     {
