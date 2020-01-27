@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Seeder;
-use App\Employee;
+use App\Models\Employee;
 
 class DatabaseSeeder extends Seeder
 {
