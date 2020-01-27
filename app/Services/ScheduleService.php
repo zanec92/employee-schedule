@@ -6,6 +6,7 @@ use App\Repositories\ARVacationRepository;
 use App\Repositories\GoogleCalendarEventsRepository;
 use App\Repositories\GoogleCalendarHolidaysRepository;
 use Carbon\CarbonPeriod;
+use Carbon\Carbon;
 
 class ScheduleService
 {
@@ -95,11 +96,32 @@ class ScheduleService
 
         $businessDaysPeriod = $this->getBusinessDaysPeriod($startDate, $endDate, $id);
 
-        foreach ($businessDaysPeriod as $n => $date) {
+        $events = $this->events->between($startDate, $endDate);
+
+        /*foreach ($businessDaysPeriod as $n => $date) {
             $this->data['schedule'][$n]['day'] = $date->format('Y-m-d');
             $this->data['schedule'][$n]['timeRanges'] = $timeRanges;
+        }*/
+        $count = 0;
+        foreach ($businessDaysPeriod as $date) {
+            foreach ($timeRanges as $time) {
+                $this->data[$count]['start'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['start']);
+                $this->data[$count]['end'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['end']);
+                $count++;
+            }
         }
 
+        foreach ($this->data as $interval) {
+            foreach ($events as $event) {
+                $period = CarbonPeriod::create($interval['start'], $interval['end']);
+                if ($period->overlaps($event['start_date'], $event['end_date'])) {
+                    dump($interval['start']);
+                    dump($interval['end']);
+                }  
+            }
+        }
+
+        dd($this->data);
         return $this->data;
     }
 
