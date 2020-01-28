@@ -111,12 +111,18 @@ class ScheduleService
             }
         }
 
-        foreach ($this->data as $interval) {
+        foreach ($this->data as &$interval) {
             foreach ($events as $event) {
                 $period = CarbonPeriod::create($interval['start'], $interval['end']);
                 if ($period->overlaps($event['start_date'], $event['end_date'])) {
-                    dump($interval['start']);
-                    dump($interval['end']);
+                    if ($interval['start'] <= $event['start_date'] && $interval['end'] <= $event['end_date']) {
+                        $interval['end'] = $event['start_date'];
+                    } elseif ($interval['start'] >= $event['start_date'] && $interval['end'] >= $event['end_date']) {
+                        $interval['start'] = $event['end_date'];
+                    } else {
+                        $interval['start'] = $event['start_date'];
+                        $interval['end'] = $event['end_date'];
+                    }
                 }
             }
         }
