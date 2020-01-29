@@ -102,9 +102,10 @@ class ScheduleService
 
         foreach ($businessDaysPeriod as $date) {
             foreach ($timeRanges as $time) {
-                $range['start'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['start'])->toMutable();
-                $range['end'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['end'])->toMutable();
-                array_push($this->intervals, $range);
+                $this->intervals[] = [
+                    'start' => Carbon::create($date->format('Y-m-d') . ' ' . $time['start']),
+                    'end' => Carbon::create($date->format('Y-m-d') . ' ' . $time['end'])
+                ];
             }
         }
 
@@ -128,9 +129,10 @@ class ScheduleService
 
         foreach ($this->intervals as $n => $interval) {
             $this->data['schedule'][$interval['start']->format('Y-m-d')]['day'] = $interval['start']->format('Y-m-d');
-            $this->data['schedule'][$interval['start']->format('Y-m-d')]['timeRange'][$n]['start'] = $interval['start']->format('H:i');
-            $this->data['schedule'][$interval['start']->format('Y-m-d')]['timeRange'][$n]['end'] = $interval['end']->format('H:i');
-            $this->data['schedule'][$interval['start']->format('Y-m-d')]['timeRange'] = array_values($this->data['schedule'][$interval['start']->format('Y-m-d')]['timeRange']);
+            $this->data['schedule'][$interval['start']->format('Y-m-d')]['timeRange'][] = [
+                'start' => $interval['start']->format('H:i'),
+                'end' => $interval['end']->format('H:i')
+            ];
         }
 
         return $this->data;
