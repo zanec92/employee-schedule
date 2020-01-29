@@ -45,6 +45,8 @@ class ScheduleService
      */
     protected $data = [];
 
+    protected $intervals = [];
+
     /**
      * Конструктор класса ScheduleService
      *
@@ -98,20 +100,15 @@ class ScheduleService
 
         $events = $this->events->between($startDate, $endDate);
 
-        /*foreach ($businessDaysPeriod as $n => $date) {
-            $this->data['schedule'][$n]['day'] = $date->format('Y-m-d');
-            $this->data['schedule'][$n]['timeRanges'] = $timeRanges;
-        }*/
-
         foreach ($businessDaysPeriod as $date) {
             foreach ($timeRanges as $time) {
-                $range['start'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['start']);
-                $range['end'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['end']);
-                array_push($this->data, $range);
+                $range['start'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['start'])->toMutable();
+                $range['end'] = Carbon::create($date->format('Y-m-d') . ' ' . $time['end'])->toMutable();
+                array_push($this->intervals, $range);
             }
         }
 
-        foreach ($this->data as &$interval) {
+        foreach ($this->intervals as &$interval) {
             foreach ($events as $event) {
                 $period = CarbonPeriod::create($interval['start'], $interval['end']);
                 if ($period->overlaps($event['start_date'], $event['end_date'])) {
@@ -127,7 +124,15 @@ class ScheduleService
             }
         }
 
-        dd($this->data);
+        unset($interval);
+
+        foreach ($this->intervals as $n => $interval) {
+            $this->data['schedule'][$interval['start']->format('Y-m-d')]['day'] = $interval['start']->format('Y-m-d');
+            $this->data['schedule'][$interval['start']->format('Y-m-d')]['timeRange'][$n]['start'] = $interval['start']->format('H:i');
+            $this->data['schedule'][$interval['start']->format('Y-m-d')]['timeRange'][$n]['end'] = $interval['end']->format('H:i');
+            $this->data['schedule'][$interval['start']->format('Y-m-d')]['timeRange'] = array_values($this->data['schedule'][$interval['start']->format('Y-m-d')]['timeRange']);
+        }
+
         return $this->data;
     }
 
