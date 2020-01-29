@@ -109,23 +109,23 @@ class ScheduleService
             }
         }
 
-        foreach ($this->intervals as &$interval) {
+        foreach ($this->intervals as $n => $interval) {
             foreach ($events as $event) {
                 $period = CarbonPeriod::create($interval['start'], $interval['end']);
                 if ($period->overlaps($event['start_date'], $event['end_date'])) {
                     if ($interval['start'] <= $event['start_date'] && $interval['end'] <= $event['end_date']) {
-                        $interval['end'] = $event['start_date'];
+                        $this->intervals[$n]['end'] = $event['start_date'];
                     } elseif ($interval['start'] >= $event['start_date'] && $interval['end'] >= $event['end_date']) {
-                        $interval['start'] = $event['end_date'];
+                        $this->intervals[$n]['start'] = $event['end_date'];
+                    } elseif ($interval['start'] <= $event['start_date'] && $interval['end'] >= $event['end_date']) {
+                        $this->intervals[$n]['start'] = $event['start_date'];
+                        $this->intervals[$n]['end'] = $event['end_date'];
                     } else {
-                        $interval['start'] = $event['start_date'];
-                        $interval['end'] = $event['end_date'];
+                        unset($this->intervals[$n]);
                     }
                 }
             }
         }
-
-        unset($interval);
 
         foreach ($this->intervals as $n => $interval) {
             $this->data['schedule'][$interval['start']->format('Y-m-d')]['day'] = $interval['start']->format('Y-m-d');
