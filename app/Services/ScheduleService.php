@@ -7,6 +7,7 @@ use App\Repositories\GoogleCalendarEventsRepository;
 use App\Repositories\GoogleCalendarHolidaysRepository;
 use Carbon\CarbonPeriod;
 use Carbon\Carbon;
+use App\Components\DateRange;
 
 class ScheduleService
 {
@@ -139,7 +140,7 @@ class ScheduleService
      * @param array $timeRanges
      * @return array
      */
-    private function getWorkingTimeIntervals(CarbonPeriod $businessDaysPeriod, array $timeRanges): array
+    private function getWorkingTimeIntervals(CarbonPeriod $businessDaysPeriod, array $timeRanges)
     {
         foreach ($businessDaysPeriod as $date) {
             foreach ($timeRanges as $time) {
@@ -150,7 +151,7 @@ class ScheduleService
             }
         }
 
-        return $workingTimeIntervals;
+        return collect($workingTimeIntervals);
     }
 
     /**
@@ -160,25 +161,47 @@ class ScheduleService
      * @param array $events
      * @return array
      */
-    private function removeEventsFromWorkingTime(array $workingTimeIntervals, array $events): array
+    private function removeEventsFromWorkingTime($workingTimeIntervals, array $events)
     {
-        foreach ($workingTimeIntervals as $n => $interval) {
+        return $workingTimeIntervals->map(function($interval) use ($events) {
+            $period = new DateRange($interval['start'], $interval['end']);
+            
+            return collect($events)->map(function($event) use ($period) {
+                $event = new DateRange($event['start_date'], $event['end_date']);
+                if ($period->isOverlap($event)) {
+                    if ($period->startsBefore($event) && $period->endsBefore($event)) {
+                        $period->end = $event->start;
+                    } elseif ($period->startsAfter($event) && $period->endsAfter($event)) {
+                        $period->start = $event->end;
+                    } elseif ($period->startsBefore($event) && $period->endsAfter($event)) {
+                        $period->start = $event->start;
+                        $period->end = $event->end;
+                    } else {
+                        return;
+                    }
+                }
+                return $period;
+            })->first()->toArray();
+        })->toArray();
+
+  /*      foreach ($workingTimeIntervals as $n => &$interval) {
+            $period = new DateRange($interval['start'], $interval['end']);
             foreach ($events as $event) {
-                $period = CarbonPeriod::create($interval['start'], $interval['end']);
-                if ($period->overlaps($event['start_date'], $event['end_date'])) {
-                    if ($interval['start'] <= $event['start_date'] && $interval['end'] <= $event['end_date']) {
-                        $workingTimeIntervals[$n]['end'] = $event['start_date'];
-                    } elseif ($interval['start'] >= $event['start_date'] && $interval['end'] >= $event['end_date']) {
-                        $workingTimeIntervals[$n]['start'] = $event['end_date'];
-                    } elseif ($interval['start'] <= $event['start_date'] && $interval['end'] >= $event['end_date']) {
-                        $workingTimeIntervals[$n]['start'] = $event['start_date'];
-                        $workingTimeIntervals[$n]['end'] = $event['end_date'];
+                $event = new DateRange($event['start_date'], $event['end_date']);
+                if ($period->isOverlap($event)) {
+                    if ($period->startsBefore($event) && $period->endsBefore($event)) {
+                        $interval['end'] = $event->start;
+                    } elseif ($period->startsAfter($event) && $period->endsAfter($event)) {
+                        $interval['start'] = $event->end;
+                    } elseif ($period->startsBefore($event) && $period->endsAfter($event)) {
+                        $interval['start'] = $event->start;
+                        $interval['end'] = $event->end;
                     } else {
                         unset($workingTimeIntervals[$n]);
                     }
                 }
             }
-        }
+        }*/
 
         return $workingTimeIntervals;
     }
@@ -189,7 +212,7 @@ class ScheduleService
      * @param array $workingTimeIntervals
      * @return array
      */
-    private function generateOutputData(array $workingTimeIntervals): array
+    private function generateOutputData($workingTimeIntervals): array
     {
         foreach ($workingTimeIntervals as $interval) {
             $data['schedule'][$interval['start']->format('Y-m-d')]['day'] = $interval['start']->format('Y-m-d');
