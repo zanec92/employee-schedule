@@ -15,50 +15,50 @@ class ScheduleService
      *
      * @var \App\Repositories\AREmployeeTimeRepository
      */
-    protected $employeeTime;
+    protected $employeeTimeRepo;
 
     /**
      * Репозиторий праздников
      *
      * @var \App\Repositories\GoogleCalendarHolidaysRepository
      */
-    protected $holiday;
+    protected $holidayRepo;
 
     /**
      * Репозиторий отпусков
      *
      * @var \App\Repositories\ARVacationRepository
      */
-    protected $vacation;
+    protected $vacationRepo;
 
     /**
      * Репозиторий событий: отгулы, корпоративы и прочее
      *
      * @var \App\Repositories\GoogleCalendarEventsRepository
      */
-    protected $events;
+    protected $eventsRepo;
 
 
     /**
      * Конструктор класса ScheduleService
      *
-     * @param \App\Repositories\ARVacationRepository $vacation
-     * @param \App\Repositories\AREmployeeTimeRepository $employeeTime
-     * @param \App\Repositories\GoogleCalendarHolidaysRepository $holiday
-     * @param \App\Repositories\GoogleCalendarEventsRepository $events
+     * @param \App\Repositories\ARVacationRepository $vacationRepo
+     * @param \App\Repositories\AREmployeeTimeRepository $employeeTimeRepo
+     * @param \App\Repositories\GoogleCalendarHolidaysRepository $holidayRepo
+     * @param \App\Repositories\GoogleCalendarEventsRepository $eventsRepo
      *
      */
     public function __construct(
-        ARVacationRepository $vacation,
-        AREmployeeTimeRepository $employeeTime,
-        GoogleCalendarHolidaysRepository $holiday,
-        GoogleCalendarEventsRepository $events
+        ARVacationRepository $vacationRepo,
+        AREmployeeTimeRepository $employeeTimeRepo,
+        GoogleCalendarHolidaysRepository $holidayRepo,
+        GoogleCalendarEventsRepository $eventsRepo
     )
     {
-        $this->vacation = $vacation;
-        $this->employeeTime = $employeeTime;
-        $this->holiday = $holiday;
-        $this->events = $events;
+        $this->vacationRepo = $vacationRepo;
+        $this->employeeTimeRepo = $employeeTimeRepo;
+        $this->holidayRepo = $holidayRepo;
+        $this->eventsRepo = $eventsRepo;
     }
 
     /**
@@ -72,14 +72,10 @@ class ScheduleService
      */
     public function getEmployeeTimetable(int $id, string $startDate, string $endDate): array
     {
-        $timeRanges = $this->employeeTime->find($id);
-
+        $timeRanges = $this->employeeTimeRepo->find($id);
         $businessDaysPeriod = $this->getBusinessDaysPeriod($id, $startDate, $endDate);
-
-        $events = $this->events->between($startDate, $endDate);
-
+        $events = $this->eventsRepo->between($startDate, $endDate);
         $workingTimeIntervals = $this->getWorkingTimeIntervals($businessDaysPeriod, $timeRanges);
-
         $workingTimeIntervalsWithoutEvents = $this->removeEventsFromWorkingTime($workingTimeIntervals, $events);
 
         return $this->generateOutputData($workingTimeIntervalsWithoutEvents);
@@ -96,9 +92,8 @@ class ScheduleService
      */
     private function getBusinessDaysPeriod(int $id, string $startDate, string $endDate): CarbonPeriod
     {
-        $holidays = $this->holiday->all();
-
-        $vacations = $this->vacation->find($id);
+        $holidays = $this->holidayRepo->all();
+        $vacations = $this->vacationRepo->find($id);
 
         return CarbonPeriod::create($startDate, $endDate)
             ->filter(function ($date) use ($holidays, $vacations) {
@@ -196,7 +191,7 @@ class ScheduleService
      */
     private function generateOutputData(array $workingTimeIntervals): array
     {
-        foreach ($workingTimeIntervals as $n => $interval) {
+        foreach ($workingTimeIntervals as $interval) {
             $data['schedule'][$interval['start']->format('Y-m-d')]['day'] = $interval['start']->format('Y-m-d');
             $data['schedule'][$interval['start']->format('Y-m-d')]['timeRange'][] = [
                 'start' => $interval['start']->format('H:i'),
